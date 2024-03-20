@@ -53,7 +53,34 @@ export default function Home() {
     await capsule.createUser(email);
   }
 
+  const createPregenWallet = async (): Promise<void> => {
+    if (!capsule) {
+      throw new Error('Capsule not instantiated');
+    }
+    await capsule.createWalletPreGen(email);
+  }
+
+  const claimPregenWallet = async (): Promise<void> => {
+    if (!capsule) {
+      throw new Error('Capsule not instantiated');
+    }
+    await capsule.claimPregenWallet(email);
+  }
+
   const verifyEmail = async (): Promise<void> => {
+    if (!capsule) {
+      throw new Error('Capsule not instantiated');
+    }
+    const url = await capsule.verifyEmail(verificationCode);
+    setPasskeyCreationUrl(url);
+    window.open(url, 'popup', 'popup=true,width=400,height=500');
+
+    const recoverySecret = await capsule.waitForPasskeyAndCreateWallet();
+    setWalletAddress(Object.values(capsule.getWallets())[0].address);
+    setRecoverySecret(recoverySecret);
+  }
+
+  const verifyEmailandClaim = async (): Promise<void> => {
     if (!capsule) {
       throw new Error('Capsule not instantiated');
     }
@@ -97,15 +124,10 @@ export default function Home() {
 
   return capsule ? 
     <main className="m-5 flex flex-col gap-4">
-      <button
-        className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-        onClick={checkIfLoggedIn}
-      >
-        Check if User Is Logged In
-      </button>
-      <p className="m-2">
-        {userIsLoggedIn ? 'User is logged in' : 'User is not logged in'}
-      </p>
+      <h1>Pregen</h1>
+      <h2>To test this out, create a pregenerated wallet below, then verify that email and complete the passkey flow</h2>
+      <h2>You can use SOME_EMAIL@test.usecapsule.com to bypass email verification if you'd like to try this many times.</h2>
+      
       <input
         className="border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-5 pt-5 backdrop-blur-2xl dark:bg-zinc-800/30 dark:from-inherit lg:bg-gray-200 lg:p-4"
         name="email"
@@ -115,10 +137,19 @@ export default function Home() {
       />
       <button
         className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-        onClick={createAccount}
+        onClick={createPregenWallet}
       >
-        Create Account
+        Create Pregen Wallet
       </button>
+      <button
+        className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        onClick={checkIfLoggedIn}
+      >
+        Check if User Is Logged In
+      </button>
+      <p className="m-2">
+        {userIsLoggedIn ? 'User is logged in' : 'User is not logged in'}
+      </p>
       <input
         className="border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-5 pt-5 backdrop-blur-2xl dark:bg-zinc-800/30 dark:from-inherit lg:bg-gray-200 lg:p-4"
         name="verificationCode"
@@ -183,6 +214,13 @@ export default function Home() {
           Passkey Login URL: {passkeyLoginUrl}
         </p>
       }
+      {/* TODO: add conditional checks */}
+      <button
+        className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        onClick={verifyEmailandClaim}
+      >
+        Claim Pregen Wallet
+      </button>
       <button
         onClick={logout}
         className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
