@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react';
 export default function Home() {
   const [capsule, setCapsule] = useState<Capsule>();
   const [email, setEmail] = useState<string>('');
+  const [walletId, setWalletId] = useState<string>('');
+  const [userShare, setUserShare] = useState<string>('');
   const [signature, setSignature] = useState<string>();
   const [verificationCode, setVerificationCode] = useState<string>('');
   const [passkeyCreationUrl, setPasskeyCreationUrl] = useState<string>('');
@@ -16,7 +18,7 @@ export default function Home() {
   const [userIsLoggedIn, setUserIsLoggedIn] = useState<boolean>(false);
   const [messageToSign, setMessageToSign] = useState<string>('');
 
-  const CAPSULE_API_KEY = process.env.NEXT_PUBLIC_CAPSULE_API_KEY;
+  const CAPSULE_API_KEY = process.env.NEXT_PUBLIC_CAPSULE_API_KEY || '8ee2d015fbc6062a6e30bdc472f2946c';
   if (!CAPSULE_API_KEY) {
     throw new Error('NEXT_PUBLIC_CAPSULE_API_KEY is undefined');
   }
@@ -25,7 +27,7 @@ export default function Home() {
     if (!capsule) {
       const CapsuleModule = await import('@usecapsule/web-sdk');
       const loadedInstance = new CapsuleModule.default(
-        CapsuleModule.Environment.DEVELOPMENT,
+        CapsuleModule.Environment.SANDBOX,
         CAPSULE_API_KEY
       );
       setCapsule(loadedInstance);
@@ -57,27 +59,14 @@ export default function Home() {
     if (!capsule) {
       throw new Error('Capsule not instantiated');
     }
-    await capsule.createWalletPreGen(email);
-  }
-
-  const claimPregenWallet = async (): Promise<void> => {
-    if (!capsule) {
-      throw new Error('Capsule not instantiated');
+    const [pregenWallet, recovery] = await capsule.createWalletPreGen(email);
+    setWalletId(pregenWallet.id)
+    const fetchedUserShare = await capsule.getUserShare()
+    if (!!fetchedUserShare) {
+      await capsule.setUserShare(fetchedUserShare)
+      setUserShare(fetchedUserShare)
     }
-    await capsule.claimPregenWallet(email);
-  }
 
-  const verifyEmail = async (): Promise<void> => {
-    if (!capsule) {
-      throw new Error('Capsule not instantiated');
-    }
-    const url = await capsule.verifyEmail(verificationCode);
-    setPasskeyCreationUrl(url);
-    window.open(url, 'popup', 'popup=true,width=400,height=500');
-
-    const recoverySecret = await capsule.waitForPasskeyAndCreateWallet();
-    setWalletAddress(Object.values(capsule.getWallets())[0].address);
-    setRecoverySecret(recoverySecret);
   }
 
   const verifyEmailandClaim = async (): Promise<void> => {
@@ -88,6 +77,9 @@ export default function Home() {
     setPasskeyCreationUrl(url);
     window.open(url, 'popup', 'popup=true,width=400,height=500');
 
+    // capsule.waitForPasskeyAndCreateWallet checks to see if there is a
+    // pregenerated wallet for the current email.
+    // if there is one, the wallet is claimed; otherwise a new wallet is created.
     const recoverySecret = await capsule.waitForPasskeyAndCreateWallet();
     setWalletAddress(Object.values(capsule.getWallets())[0].address);
     setRecoverySecret(recoverySecret);
@@ -109,10 +101,11 @@ export default function Home() {
     if (!capsule) {
       throw new Error('Capsule not instantiated');
     }
-    const signer = new CapsuleEthersSigner(capsule);
-    const signature = await signer.signMessage(message);
-    setSignature(signature);
-    setWalletAddress(Object.values(capsule.getWallets())[0].address);
+    const wallets=capsule.getWallets()
+    const base64EncodedMessage = Buffer.from(JSON.stringify(message)).toString('base64')
+    const signature = await capsule.signMessage(walletId, base64EncodedMessage);
+    setSignature(signature.toString);
+    setWalletAddress(wallets[walletId].address);
   };
 
   const logout = async () => {
@@ -127,6 +120,7 @@ export default function Home() {
       <h1>Pregen</h1>
       <h2>To test this out, create a pregenerated wallet below, then verify that email and complete the passkey flow</h2>
       <h2>You can use SOME_EMAIL@test.usecapsule.com to bypass email verification if you'd like to try this many times.</h2>
+      <h2>You can use youremail+SOME_STRING@test.usecapsule.com to create many pregen wallets.</h2>
       
       <input
         className="border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-5 pt-5 backdrop-blur-2xl dark:bg-zinc-800/30 dark:from-inherit lg:bg-gray-200 lg:p-4"
@@ -147,6 +141,12 @@ export default function Home() {
       >
         Check if User Is Logged In
       </button>
+      <button
+        className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        onClick={createAccount}
+      >
+        Create Account after pregen
+      </button>
       <p className="m-2">
         {userIsLoggedIn ? 'User is logged in' : 'User is not logged in'}
       </p>
@@ -159,10 +159,15 @@ export default function Home() {
       />
       <button
         className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-        onClick={verifyEmail}
+        onClick={verifyEmailandClaim}
       >
         Verify Email
       </button>
+      {userShare &&
+        <p className="m-2">
+          User Share from Pregen: {userShare}
+        </p>
+      }
       {passkeyCreationUrl &&
         <p className="m-2">
           Passkey Creation URL: {passkeyCreationUrl}
