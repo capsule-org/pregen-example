@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@usecapsule/ethers-v6-integration": "1.3.0",
-    "@usecapsule/web-sdk": "1.3.0",
+    "@usecapsule/web-sdk": "1.4.0",
     "react": "^18",
     "react-dom": "^18",
     "next": "14.1.1"
