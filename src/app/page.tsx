@@ -9,6 +9,7 @@ export default function Home() {
   const [email, setEmail] = useState<string>('');
   const [walletId, setWalletId] = useState<string>('');
   const [userShare, setUserShare] = useState<string>('');
+  const [userCreated, setUserCreated] = useState<boolean>(false);
   const [signature, setSignature] = useState<string>();
   const [verificationCode, setVerificationCode] = useState<string>('');
   const [passkeyCreationUrl, setPasskeyCreationUrl] = useState<string>('');
@@ -18,7 +19,7 @@ export default function Home() {
   const [userIsLoggedIn, setUserIsLoggedIn] = useState<boolean>(false);
   const [messageToSign, setMessageToSign] = useState<string>('');
 
-  const CAPSULE_API_KEY = process.env.NEXT_PUBLIC_CAPSULE_API_KEY || '8ee2d015fbc6062a6e30bdc472f2946c';
+  const CAPSULE_API_KEY = process.env.NEXT_PUBLIC_CAPSULE_API_KEY;
   if (!CAPSULE_API_KEY) {
     throw new Error('NEXT_PUBLIC_CAPSULE_API_KEY is undefined');
   }
@@ -27,7 +28,7 @@ export default function Home() {
     if (!capsule) {
       const CapsuleModule = await import('@usecapsule/web-sdk');
       const loadedInstance = new CapsuleModule.default(
-        CapsuleModule.Environment.SANDBOX,
+        CapsuleModule.Environment.BETA,
         CAPSULE_API_KEY
       );
       setCapsule(loadedInstance);
@@ -53,6 +54,7 @@ export default function Home() {
       throw new Error('Capsule not instantiated');
     }
     await capsule.createUser(email);
+    setUserCreated(true)
   }
 
   const createPregenWallet = async (): Promise<void> => {
@@ -135,21 +137,22 @@ export default function Home() {
       >
         Create Pregen Wallet
       </button>
-      <button
-        className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-        onClick={checkIfLoggedIn}
-      >
-        Check if User Is Logged In
-      </button>
+      {userShare &&
+        <p className="m-2">
+          Pregen Succeeded! User Share: {userShare}
+        </p>
+      }
       <button
         className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
         onClick={createAccount}
       >
         Create Account after pregen
       </button>
-      <p className="m-2">
-        {userIsLoggedIn ? 'User is logged in' : 'User is not logged in'}
-      </p>
+      {userCreated &&
+        <p className="m-2">
+          Account Created! Check your email for a verificaton code
+        </p>
+      }
       <input
         className="border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-5 pt-5 backdrop-blur-2xl dark:bg-zinc-800/30 dark:from-inherit lg:bg-gray-200 lg:p-4"
         name="verificationCode"
@@ -163,11 +166,6 @@ export default function Home() {
       >
         Verify Email
       </button>
-      {userShare &&
-        <p className="m-2">
-          User Share from Pregen: {userShare}
-        </p>
-      }
       {passkeyCreationUrl &&
         <p className="m-2">
           Passkey Creation URL: {passkeyCreationUrl}
@@ -219,13 +217,6 @@ export default function Home() {
           Passkey Login URL: {passkeyLoginUrl}
         </p>
       }
-      {/* TODO: add conditional checks */}
-      <button
-        className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-        onClick={verifyEmailandClaim}
-      >
-        Claim Pregen Wallet
-      </button>
       <button
         onClick={logout}
         className="m-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"

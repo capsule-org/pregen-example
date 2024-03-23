@@ -42,7 +42,9 @@ await capsule.signMessage(walletId, messageBase64)
 await capsule.signTransaction(walletId, rlpEncodedTxBase64, chainId)
 ```
 
-- When users are ready to claim their wallet, they can create an account as usual and then their pregen wallets can be claimed via:
+- When users with a pregenerated wallet go through the capsule signup flow using the associated email, their wallet is automatically claimed instead of creating a new wallet.
+
+Alternatively, pregen wallets can be "manually" claimed using:
 
 ```typescript
 await capsule.claimPregenWallet(claimPregenEmail)
