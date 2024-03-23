@@ -122,7 +122,7 @@ export default function Home() {
       <h1>Pregen</h1>
       <h2>To test this out, create a pregenerated wallet below, then verify that email and complete the passkey flow</h2>
       <h2>You can use SOME_EMAIL@test.usecapsule.com to bypass email verification if you'd like to try this many times.</h2>
-      <h2>You can use youremail+SOME_STRING@test.usecapsule.com to create many pregen wallets.</h2>
+      <h2>You can use youremail+SOME_STRING@youremail.com to create many pregen wallets that can be claimed (which you need to have access to the email for).</h2>
       
       <input
         className="border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-5 pt-5 backdrop-blur-2xl dark:bg-zinc-800/30 dark:from-inherit lg:bg-gray-200 lg:p-4"
